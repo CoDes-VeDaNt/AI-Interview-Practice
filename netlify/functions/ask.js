@@ -10,80 +10,74 @@ exports.handler = async (event) => {
       return json(400, { error: "Question is required." });
     }
 
-    const url = process.env.AI_API_URL;
     const key = process.env.AI_API_KEY;
-    const model = process.env.AI_MODEL;
+    const model = process.env.AI_MODEL || "gemini-2.5-flash";
 
-    if (!url || !key || !model) {
+    if (!key) {
       return json(500, {
-        error: "AI backend is not configured. Check AI_API_URL, AI_API_KEY and AI_MODEL."
+        error: "Gemini API key is missing. Check AI_API_KEY in Netlify."
       });
     }
 
+    const url =
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
+
     const response = await fetch(url, {
       method: "POST",
+
       headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${key}`
+        "Content-Type": "application/json"
       },
+
       body: JSON.stringify({
-        model: model,
-        messages: [
-          {
-            role: "system",
-            content:
-              "You are an AI interview practice assistant. Answer clearly and accurately. For coding questions, explain the solution and provide code when useful."
-          },
+        systemInstruction: {
+          parts: [
+            {
+              text:
+                "You are an AI interview practice assistant. " +
+                "Answer clearly and accurately. " +
+                "For coding questions, explain the solution and provide code when useful."
+            }
+          ]
+        },
+
+        contents: [
           {
             role: "user",
-            content: question
+            parts: [
+              {
+                text: question
+              }
+            ]
           }
         ],
-        temperature: 0.3
+
+        generationConfig: {
+          temperature: 0.3
+        }
       })
     });
 
     const data = await response.json();
 
-    console.log("AI provider response:", JSON.stringify(data));
+    console.log("Gemini response:", JSON.stringify(data));
 
     if (!response.ok) {
       return json(response.status, {
         error:
           data?.error?.message ||
-          data?.error ||
-          "AI provider returned an error."
+          "Gemini API returned an error."
       });
     }
 
-    // OpenAI-compatible response
-    let answer = data?.choices?.[0]?.message?.content;
-
-    // Handle providers that return content as an array
-    if (Array.isArray(answer)) {
-      answer = answer
-        .map(item => item?.text || item?.content || "")
+    const answer =
+      data?.candidates?.[0]?.content?.parts
+        ?.map(part => part?.text || "")
         .join("");
-    }
-
-    // Gemini-style fallback
-    if (!answer) {
-      answer =
-        data?.candidates?.[0]?.content?.parts
-          ?.map(part => part?.text || "")
-          .join("");
-    }
-
-    // Another possible text response
-    if (!answer) {
-      answer = data?.output_text;
-    }
 
     if (!answer) {
-      console.log("Unexpected AI response:", JSON.stringify(data));
-
       return json(502, {
-        error: "AI returned a response, but no answer text was found."
+        error: "Gemini responded, but no answer text was returned."
       });
     }
 
@@ -92,10 +86,10 @@ exports.handler = async (event) => {
     });
 
   } catch (error) {
-    console.error("Function error:", error);
+    console.error("Gemini function error:", error);
 
     return json(500, {
-      error: error.message || "AI request failed."
+      error: error.message || "Gemini request failed."
     });
   }
 };
@@ -104,10 +98,12 @@ exports.handler = async (event) => {
 function json(statusCode, body) {
   return {
     statusCode,
+
     headers: {
       "Content-Type": "application/json",
       "Cache-Control": "no-store"
     },
+
     body: JSON.stringify(body)
   };
 }
