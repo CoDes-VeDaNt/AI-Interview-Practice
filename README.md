@@ -14,3 +14,4 @@ Based on the supplied HTML. The original page already calls `/api/ask` and `/api
 The exact request/response format varies by AI provider. The functions use a common chat-style API shape. If your provider differs, its request body needs to be adjusted.
 
 The site is responsive and accessible from all devices. The current Question History is browser-local, so it does not automatically sync between devices. Cross-device synced history requires login + a database.
+
