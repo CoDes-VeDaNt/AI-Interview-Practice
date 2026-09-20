@@ -521,8 +521,23 @@ async function askAI() {
 
         const data = await response.json();
 
-        displayAnswer(data.answer);
+        if (!response.ok) {
+            displayAnswer(`
+                <h3>❌ AI Backend Error</h3>
+                <p>${data.error || "Unknown backend error"}</p>
+            `);
+            return;
+        }
 
+        if (!data.answer) {
+            displayAnswer(`
+                <h3>❌ No AI Answer</h3>
+                <p>The backend responded, but no answer was returned.</p>
+            `);
+            return;
+        }
+
+        displayAnswer(data.answer);
         addHistory(question);
 
     }
