@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>AI Interview Practice Assistant</title>
+
+<style>
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background: #080b12;
+    color: #fff;
+    min-height: 100vh;
+}
+
+.header {
+    padding: 20px 30px;
+    border-bottom: 1px solid #202532;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.logo {
+    font-size: 22px;
+    font-weight: bold;
+}
+
+.logo span {
+    color: #5b8cff;
+}
+
+.status {
+    font-size: 13px;
+    color: #65e6a5;
+}
+
+.container {
+    max-width: 1250px;
+    margin: auto;
+    padding: 25px;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.card {
+    background: #111621;
+    border: 1px solid #252c3a;
+    border-radius: 16px;
+    padding: 20px;
+}
+
+.card h2 {
+    font-size: 18px;
+    margin-bottom: 15px;
+}
+
+.question-box {
+    min-height: 180px;
+    background: #080c14;
+    border: 1px solid #292f3d;
+    border-radius: 12px;
+    padding: 18px;
+    color: #cbd2df;
+    line-height: 1.6;
+}
+
+.controls {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+    flex-wrap: wrap;
+}
+
+button,
+.upload-label {
+    border: none;
+    padding: 12px 18px;
+    border-radius: 9px;
+    cursor: pointer;
+    font-weight: bold;
+    background: #1c2433;
+    color: white;
+}
+
+button:hover,
+.upload-label:hover {
+    background: #2a3549;
+}
+
+.listen {
+    background: #315efb;
+}
+
+.listen.active {
+    background: #e5484d;
+}
+
+.ask {
+    background: #19a974;
+}
+
+input[type="file"] {
+    display: none;
+}
+
+.answer {
+    min-height: 350px;
+    background: #080c14;
+    border-radius: 12px;
+    border: 1px solid #292f3d;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.answer h3 {
+    color: #65e6a5;
+    margin-bottom: 10px;
+}
+
+.answer pre {
+    background: #05070b;
+    padding: 15px;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin-top: 12px;
+    color: #d9e2ff;
+}
+
+.answer code {
+    font-family: Consolas, monospace;
+}
+
+.image-preview {
+    margin-top: 15px;
+    display: none;
+}
+
+.image-preview img {
+    max-width: 100%;
+    max-height: 300px;
+    border-radius: 10px;
+    border: 1px solid #30394b;
+}
+
+.bottom {
+    margin-top: 20px;
+}
+
+textarea {
+    width: 100%;
+    min-height: 110px;
+    resize: vertical;
+    background: #080c14;
+    color: white;
+    border: 1px solid #292f3d;
+    border-radius: 10px;
+    padding: 15px;
+    font-size: 15px;
+}
+
+.history {
+    margin-top: 20px;
+}
+
+.history-item {
+    padding: 12px;
+    border-bottom: 1px solid #252c3a;
+    color: #b9c1d0;
+}
+
+@media(max-width: 800px) {
+    .grid {
+        grid-template-columns: 1fr;
+    }
+
+    .header {
+        padding: 15px;
+    }
+
+    .container {
+        padding: 15px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<header class="header">
+
+    <div class="logo">
+        AI <span>Interview Practice</span>
+    </div>
+
+    <div class="status" id="status">
+        ● Ready
+    </div>
+
+</header>
+
+
+<main class="container">
+
+<div class="grid">
+
+<!-- QUESTION SECTION -->
+
+<section class="card">
+
+    <h2>🎤 Question Input</h2>
+
+    <div class="question-box" id="question">
+        Click "Start Listening" and speak your interview question...
+    </div>
+
+    <div class="controls">
+
+        <button
+            class="listen"
+            id="listenBtn"
+            onclick="startListening()">
+            🎤 Start Listening
+        </button>
+
+        <button
+            onclick="clearQuestion()">
+            Clear
+        </button>
+
+    </div>
+
+
+    <div class="bottom">
+
+        <textarea
+            id="manualQuestion"
+            placeholder="Or type your question here...">
+        </textarea>
+
+        <div class="controls">
+
+            <button
+                class="ask"
+                onclick="askAI()">
+                🧠 Ask AI
+            </button>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- IMAGE SECTION -->
+
+<section class="card">
+
+    <h2>🖼️ Analyze Screenshot</h2>
+
+    <label class="upload-label">
+
+        📷 Upload Question / Code
+
+        <input
+            type="file"
+            id="imageInput"
+            accept="image/*"
+            onchange="previewImage(event)">
+
+    </label>
+
+    <div
+        class="image-preview"
+        id="imagePreview">
+
+        <img id="preview">
+
+    </div>
+
+    <div class="controls">
+
+        <button onclick="analyzeImage()">
+            🔍 Analyze Image
+        </button>
+
+    </div>
+
+</section>
+
+</div>
+
+
+<!-- ANSWER -->
+
+<section class="card" style="margin-top:20px">
+
+    <h2>🤖 AI Answer</h2>
+
+    <div
+        class="answer"
+        id="answer">
+
+        <h3>AI Response</h3>
+
+        <p>
+            Your answer will appear here.
+        </p>
+
+    </div>
+
+    <div class="controls">
+
+        <button onclick="copyAnswer()">
+            📋 Copy
+        </button>
+
+        <button onclick="speakAnswer()">
+            🔊 Read Answer
+        </button>
+
+    </div>
+
+</section>
+
+
+<!-- HISTORY -->
+
+<section class="card history">
+
+    <h2>📜 Question History</h2>
+
+    <div id="history"></div>
+
+</section>
+
+</main>
+
+
+<script>
+
+let recognition;
+let listening = false;
+
+
+/* =========================
+   SPEECH RECOGNITION
+========================= */
+
+function startListening() {
+
+    if (!("webkitSpeechRecognition" in window) &&
+        !("SpeechRecognition" in window)) {
+
+        alert("Speech recognition is not supported. Try Google Chrome.");
+
+        return;
+    }
+
+    const SpeechRecognition =
+        window.SpeechRecognition ||
+        window.webkitSpeechRecognition;
+
+    recognition = new SpeechRecognition();
+
+    recognition.lang = "en-IN";
+
+    recognition.continuous = false;
+
+    recognition.interimResults = true;
+
+
+    recognition.onstart = function() {
+
+        listening = true;
+
+        document.getElementById("listenBtn")
+            .classList.add("active");
+
+        document.getElementById("listenBtn")
+            .innerText = "🔴 Listening...";
+
+        document.getElementById("status")
+            .innerText = "● Listening";
+
+    };
+
+
+    recognition.onresult = function(event) {
+
+        let transcript = "";
+
+        for (
+            let i = event.resultIndex;
+            i < event.results.length;
+            i++
+        ) {
+
+            transcript +=
+                event.results[i][0].transcript;
+        }
+
+        document.getElementById("question")
+            .innerText = transcript;
+
+        document.getElementById("manualQuestion")
+            .value = transcript;
+
+    };
+
+
+    recognition.onend = function() {
+
+        listening = false;
+
+        document.getElementById("listenBtn")
+            .classList.remove("active");
+
+        document.getElementById("listenBtn")
+            .innerText = "🎤 Start Listening";
+
+        document.getElementById("status")
+            .innerText = "● Ready";
+
+    };
+
+
+    recognition.start();
+}
+
+
+/* =========================
+   CLEAR QUESTION
+========================= */
+
+function clearQuestion() {
+
+    document.getElementById("question")
+        .innerText =
+        "Click 'Start Listening' and speak your question...";
+
+    document.getElementById("manualQuestion")
+        .value = "";
+
+}
+
+
+/* =========================
+   IMAGE PREVIEW
+========================= */
+
+function previewImage(event) {
+
+    const file = event.target.files[0];
+
+    if (!file) return;
+
+    const reader = new FileReader();
+
+    reader.onload = function(e) {
+
+        document.getElementById("preview")
+            .src = e.target.result;
+
+        document.getElementById("imagePreview")
+            .style.display = "block";
+
+    };
+
+    reader.readAsDataURL(file);
+}
+
+
+/* =========================
+   ASK AI
+========================= */
+
+async function askAI() {
+
+    const question =
+        document.getElementById("manualQuestion")
+        .value.trim();
+
+    if (!question) {
+
+        alert("Please enter or speak a question.");
+
+        return;
+    }
+
+    showLoading();
+
+    try {
+
+        const response = await fetch("/api/ask", {
+
+            method: "POST",
+
+            headers: {
+                "Content-Type": "application/json"
+            },
+
+            body: JSON.stringify({
+                question: question
+            })
+
+        });
+
+
+        const data = await response.json();
+
+        displayAnswer(data.answer);
+
+        addHistory(question);
+
+    }
+
+    catch(error) {
+
+        displayAnswer(`
+            <h3>Connection Error</h3>
+            <p>
+            AI backend is not connected yet.
+            Create the /api/ask endpoint and connect
+            your AI model.
+            </p>
+        `);
+
+    }
+
+}
+
+
+/* =========================
+   IMAGE AI
+========================= */
+
+async function analyzeImage() {
+
+    const file =
+        document.getElementById("imageInput")
+        .files[0];
+
+    if (!file) {
+
+        alert("Please upload an image first.");
+
+        return;
+    }
+
+    showLoading();
+
+    const reader = new FileReader();
+
+    reader.onload = async function() {
+
+        try {
+
+            const response = await fetch(
+                "/api/analyze-image",
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type":
+                        "application/json"
+                    },
+
+                    body: JSON.stringify({
+                        image: reader.result
+                    })
+                }
+            );
+
+
+            const data =
+                await response.json();
+
+            displayAnswer(data.answer);
+
+        }
+
+        catch(error) {
+
+            displayAnswer(`
+                <h3>Image Analysis</h3>
+                <p>
+                Image uploaded successfully.
+                Connect the backend vision model
+                to analyze the question/code.
+                </p>
+            `);
+
+        }
+
+    };
+
+    reader.readAsDataURL(file);
+}
+
+
+/* =========================
+   DISPLAY ANSWER
+========================= */
+
+function displayAnswer(text) {
+
+    document.getElementById("answer")
+        .innerHTML = text;
+
+}
+
+
+/* =========================
+   LOADING
+========================= */
+
+function showLoading() {
+
+    document.getElementById("answer")
+        .innerHTML = `
+            <h3>Thinking...</h3>
+            <p>AI is analyzing your question.</p>
+        `;
+
+}
+
+
+/* =========================
+   COPY ANSWER
+========================= */
+
+function copyAnswer() {
+
+    const text =
+        document.getElementById("answer")
+        .innerText;
+
+    navigator.clipboard.writeText(text);
+
+    alert("Answer copied!");
+
+}
+
+
+/* =========================
+   TEXT TO SPEECH
+========================= */
+
+function speakAnswer() {
+
+    const text =
+        document.getElementById("answer")
+        .innerText;
+
+    const speech =
+        new SpeechSynthesisUtterance(text);
+
+    speech.lang = "en-IN";
+
+    speech.rate = 1;
+
+    window.speechSynthesis
+        .speak(speech);
+
+}
+
+
+/* =========================
+   HISTORY
+========================= */
+
+function addHistory(question) {
+
+    const history =
+        document.getElementById("history");
+
+    const item =
+        document.createElement("div");
+
+    item.className = "history-item";
+
+    item.innerText = question;
+
+    history.prepend(item);
+
+}
+
+</script>
+
+</body>
+</html>
